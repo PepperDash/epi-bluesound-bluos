@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Newtonsoft.Json.Linq;
 
 namespace PepperDash.Essentials.Plugin
@@ -18,7 +19,7 @@ namespace PepperDash.Essentials.Plugin
 
         private string crpcHandle = string.Empty;
         private string crpcClientUuid = string.Empty;
-        private string crpcPartialInput = string.Empty;
+        private readonly StringBuilder crpcPartialInput = new StringBuilder();
         private string crpcOutMessage = string.Empty;
         private readonly Dictionary<string, string> crpcEventHandles = new Dictionary<string, string>();
 
@@ -57,12 +58,13 @@ namespace PepperDash.Essentials.Plugin
 
             if (!isLast)
             {
-                crpcPartialInput += payload;
+                crpcPartialInput.Append(payload);
                 return;
             }
 
-            var fullJson = crpcPartialInput + payload;
-            crpcPartialInput = string.Empty;
+            crpcPartialInput.Append(payload);
+            var fullJson = crpcPartialInput.ToString();
+            crpcPartialInput.Clear();
 
             // Split on {"jsonrpc": in case multiple messages were concatenated
             var parts = fullJson.Split(new[] { "{\"jsonrpc\":" }, StringSplitOptions.RemoveEmptyEntries);
@@ -260,13 +262,16 @@ namespace PepperDash.Essentials.Plugin
 
         private void EmitCrpc(string json)
         {
-            var remaining = json;
-            while (remaining.Length > 0)
+            const int maxChunk = 247;
+            var offset = 0;
+            while (offset < json.Length)
             {
-                var chunk = remaining.Length > 247 ? remaining.Substring(0, 247) : remaining;
-                remaining = remaining.Substring(chunk.Length);
-                var flag = remaining.Length == 0 ? "e" : "c";
-                crpcOutMessage = string.Format("205{0}00{1:x2}{2}", flag, chunk.Length, chunk);
+                var len = Math.Min(maxChunk, json.Length - offset);
+                var isLast = offset + len >= json.Length;
+                var flag = isLast ? "e" : "c";
+                var chunk = json.Substring(offset, len);
+                offset += len;
+                crpcOutMessage = string.Format("205{0}00{1:x2}{2}", flag, len, chunk);
                 OnCrpcOutput?.Invoke(crpcOutMessage);
             }
         }

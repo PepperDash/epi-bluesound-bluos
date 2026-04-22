@@ -651,14 +651,11 @@ namespace PepperDash.Essentials.Plugin
                 else
                 {
                     this.LogWarning("SendCommandAsync {path} returned null", path);
-                    return;
                 }
 
-                // Immediately poll /Status without long-poll timeout so feedbacks update quickly
-                this.LogDebug("SendCommandAsync — polling /Status for immediate feedback update");
-                var status = httpClient.SendHttpGet("/Status", "timeout=0", 5000);
-                if (status != null)
-                    ParseStatusResponse(status);
+                // Kick the poll timer so /Status long-poll picks up changes quickly (runs off-queue)
+                if (pollTimer != null)
+                    pollTimer.Reset(200);
             }));
         }
 
@@ -738,13 +735,14 @@ namespace PepperDash.Essentials.Plugin
         private void EmitCrpcStateEvents()
         {
             if (crpcBridge == null) return;
-            crpcBridge.SendCrpcEvent("StateChanged", new JObject { ["PlayerState"] = GetPlayerState() });
-            crpcBridge.SendCrpcEvent("StateChanged", new JObject
+            var payload = new JObject
             {
+                ["PlayerState"] = GetPlayerState(),
                 ["TextLines"] = new JArray(GetTextLines().Cast<object>())
-            });
+            };
             if (!string.IsNullOrEmpty(albumArtUrl))
-                crpcBridge.SendCrpcEvent("StateChanged", new JObject { ["AlbumArtUri"] = albumArtUrl });
+                payload["AlbumArtUri"] = albumArtUrl;
+            crpcBridge.SendCrpcEvent("StateChanged", payload);
         }
 
         #endregion
