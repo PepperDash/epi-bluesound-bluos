@@ -30,6 +30,7 @@ namespace PepperDash.Essentials.Plugin
         private readonly BluesoundHttpClient httpClient;
         private BluesoundCrpcBridge crpcBridge;
         private CTimer pollTimer;
+        private readonly long pollIntervalMs;
 
         // Player state
         private string playState = string.Empty;
@@ -148,7 +149,7 @@ namespace PepperDash.Essentials.Plugin
             IsPlayingFeedback = new BoolFeedback("isPlaying", () => playState == "play" || playState == "stream");
             IsPausedFeedback = new BoolFeedback("isPaused", () => playState == "pause");
             ShuffleFeedback = new BoolFeedback("shuffle", () => shuffleState);
-            VolumeLevelFeedback = new IntFeedback("volumeLevel", () => (int)(volumeLevel * 65535L / 100));
+            VolumeLevelFeedback = new IntFeedback("volumeLevel", () => (int)((volumeLevel * 65535L + 50) / 100));
             CurrentTrackNameFeedback = new StringFeedback("trackName", () => currentTrackName);
             CurrentArtistFeedback = new StringFeedback("artist", () => currentArtist);
             CurrentAlbumFeedback = new StringFeedback("album", () => currentAlbum);
@@ -171,8 +172,8 @@ namespace PepperDash.Essentials.Plugin
 
             CrpcOutFeedback = new StringFeedback("crpcOut", () => string.Empty);
 
-            var pollMs = config != null && config.PollTimeMs > 0 ? config.PollTimeMs : 30000L;
-            pollTimer = new CTimer(o => Poll(), null, pollMs, pollMs);
+            pollIntervalMs = config != null && config.PollTimeMs > 0 ? config.PollTimeMs : 30000L;
+            pollTimer = new CTimer(o => PollWorker(), pollIntervalMs);
         }
 
         /// <summary>
@@ -192,45 +193,57 @@ namespace PepperDash.Essentials.Plugin
         /// </summary>
         public void Poll()
         {
-            receiveQueue.Enqueue(new CommandMessage(PollWorker));
+            if (pollTimer != null)
+                pollTimer.Reset(100);
         }
 
         private void PollWorker()
         {
-            var pollTimeoutSec = config != null && config.PollTimeMs > 0
-                ? (int)(config.PollTimeMs / 1000)
-                : 30;
-            var httpTimeoutMs = (pollTimeoutSec + 5) * 1000;
-            this.LogDebug("PollWorker — GET /Status timeout={timeout}s, httpTimeout={httpTimeout}ms", pollTimeoutSec.ToString(), httpTimeoutMs.ToString());
-            var response = httpClient.SendHttpGet("/Status", "timeout=" + pollTimeoutSec, httpTimeoutMs);
-            if (response == null)
+            try
             {
-                this.LogDebug("PollWorker — /Status returned null, wasOnline={wasOnline}", isOnline.ToString());
-                if (isOnline)
+                var pollTimeoutSec = config != null && config.PollTimeMs > 0
+                    ? (int)(config.PollTimeMs / 1000)
+                    : 30;
+                var httpTimeoutMs = (pollTimeoutSec + 5) * 1000;
+                this.LogDebug("PollWorker — GET /Status timeout={timeout}s, httpTimeout={httpTimeout}ms", pollTimeoutSec.ToString(), httpTimeoutMs.ToString());
+                var response = httpClient.SendHttpGet("/Status", "timeout=" + pollTimeoutSec, httpTimeoutMs);
+                if (response == null)
                 {
-                    isOnline = false;
-                    FireStatusFeedbacks();
+                    this.LogDebug("PollWorker — /Status returned null, wasOnline={wasOnline}", isOnline.ToString());
+                    if (isOnline)
+                    {
+                        isOnline = false;
+                        FireStatusFeedbacks();
+                    }
+                    return;
                 }
-                return;
+
+                var wasOffline = !isOnline;
+                isOnline = true;
+                this.LogDebug("PollWorker — /Status OK, wasOffline={wasOffline}", wasOffline.ToString());
+
+                if (wasOffline)
+                {
+                    this.LogDebug("PollWorker — device came online, refreshing services and presets");
+                    receiveQueue.Enqueue(new CommandMessage(() =>
+                    {
+                        RefreshServices();
+                        RefreshPresets();
+                    }));
+                }
+
+                ParseStatusResponse(response);
             }
-
-            var wasOffline = !isOnline;
-            isOnline = true;
-            this.LogDebug("PollWorker — /Status OK, wasOffline={wasOffline}", wasOffline.ToString());
-
-            if (wasOffline)
+            finally
             {
-                this.LogDebug("PollWorker — device came online, refreshing services and presets");
-                RefreshServices();
-                RefreshPresets();
+                if (pollTimer != null)
+                    pollTimer.Reset(pollIntervalMs);
             }
-
-            ParseStatusResponse(response);
         }
 
         private void ParseStatusResponse(string xml)
         {
-            this.LogDebug("ParseStatusResponse — parsing XML response ({len} chars)\n{xml}", xml.Length.ToString(), xml);
+            this.LogDebug("ParseStatusResponse — parsing XML response ({len} chars)", xml.Length.ToString());
 
             try
             {
@@ -278,12 +291,13 @@ namespace PepperDash.Essentials.Plugin
 
         private void RefreshServices()
         {
-            BrowseServices(null);
+            if (BrowseServices(null))
+                FireServiceFeedbacks();
         }
 
         private const int browseTimeoutMs = 15000;
 
-        private void BrowseServices(string browseKey)
+        private bool BrowseServices(string browseKey)
         {
             string response;
             if (string.IsNullOrEmpty(browseKey))
@@ -305,7 +319,7 @@ namespace PepperDash.Essentials.Plugin
             if (response == null)
             {
                 this.LogDebug("BrowseServices — /Browse returned null");
-                return;
+                return false;
             }
 
             try
@@ -322,23 +336,16 @@ namespace PepperDash.Essentials.Plugin
                     .ToList();
 
                 this.LogDebug("BrowseServices — found {count} items", items.Count.ToString());
-                for (var d = 0; d < items.Count; d++)
-                {
-                    var it = items[d];
-                    this.LogDebug("BrowseServices — [{i}] name='{name}' browseKey='{key}' url='{url}'",
-                        d.ToString(), it.Name, it.BrowseKey, it.Url);
-                }
-                if (items.Count == 0) return;
 
                 allServices.Clear();
                 allServices.AddRange(items);
                 servicePageIndex = 0;
-                this.LogDebug("BrowseServices — firing service feedbacks, allServices.Count={count}", allServices.Count.ToString());
-                FireServiceFeedbacks();
+                return true;
             }
             catch (Exception ex)
             {
                 this.LogWarning("BrowseServices failed: {ex}", ex.Message);
+                return false;
             }
         }
 
@@ -404,26 +411,34 @@ namespace PepperDash.Essentials.Plugin
         public void ServiceHomePage()
         {
             this.LogDebug("ServiceHomePage — returning to root");
-            browseKeyStack.Clear();
-            browseNameStack.Clear();
-            currentServicesMenu = "Home";
-            receiveQueue.Enqueue(new CommandMessage(() => BrowseServices(null)));
+            receiveQueue.Enqueue(new CommandMessage(() =>
+            {
+                browseKeyStack.Clear();
+                browseNameStack.Clear();
+                currentServicesMenu = "Home";
+                BrowseServices(null);
+                FireServiceFeedbacks();
+            }));
         }
 
         /// <summary>Go back one level in the service browse hierarchy</summary>
         public void ServiceBack()
         {
-            if (browseKeyStack.Count == 0)
+            receiveQueue.Enqueue(new CommandMessage(() =>
             {
-                this.LogDebug("ServiceBack — already at root");
-                return;
-            }
-            browseKeyStack.Pop();
-            browseNameStack.Pop();
-            var parentKey = browseKeyStack.Count > 0 ? browseKeyStack.Peek() : null;
-            currentServicesMenu = browseNameStack.Count > 0 ? browseNameStack.Peek() : "Home";
-            this.LogDebug("ServiceBack — navigating to key={key}", parentKey ?? "(root)");
-            receiveQueue.Enqueue(new CommandMessage(() => BrowseServices(parentKey)));
+                if (browseKeyStack.Count == 0)
+                {
+                    this.LogDebug("ServiceBack — already at root");
+                    return;
+                }
+                browseKeyStack.Pop();
+                browseNameStack.Pop();
+                var parentKey = browseKeyStack.Count > 0 ? browseKeyStack.Peek() : null;
+                currentServicesMenu = browseNameStack.Count > 0 ? browseNameStack.Peek() : "Home";
+                this.LogDebug("ServiceBack — navigating to key={key}", parentKey ?? "(root)");
+                BrowseServices(parentKey);
+                FireServiceFeedbacks();
+            }));
         }
 
         /// <summary>Advance the presets list to the next page</summary>
@@ -515,6 +530,11 @@ namespace PepperDash.Essentials.Plugin
         /// <param name="slotIndex">0-based slot within the current page</param>
         public void SelectService(int slotIndex)
         {
+            receiveQueue.Enqueue(new CommandMessage(() => SelectServiceWorker(slotIndex)));
+        }
+
+        private void SelectServiceWorker(int slotIndex)
+        {
             var abs = servicePageIndex * pageSize + slotIndex;
             this.LogDebug("SelectService slot={slot}, abs={abs}, count={count}", slotIndex.ToString(), abs.ToString(), allServices.Count.ToString());
             if (abs >= allServices.Count)
@@ -529,10 +549,13 @@ namespace PepperDash.Essentials.Plugin
             if (!string.IsNullOrEmpty(entry.BrowseKey))
             {
                 this.LogDebug("SelectService — browsing into '{name}' key={key}", entry.Name, entry.BrowseKey);
-                browseKeyStack.Push(entry.BrowseKey);
-                browseNameStack.Push(entry.Name);
-                currentServicesMenu = entry.Name;
-                receiveQueue.Enqueue(new CommandMessage(() => BrowseServices(entry.BrowseKey)));
+                if (BrowseServices(entry.BrowseKey))
+                {
+                    browseKeyStack.Push(entry.BrowseKey);
+                    browseNameStack.Push(entry.Name);
+                    currentServicesMenu = entry.Name;
+                    FireServiceFeedbacks();
+                }
                 return;
             }
 
@@ -628,20 +651,15 @@ namespace PepperDash.Essentials.Plugin
                 else
                 {
                     this.LogWarning("SendCommandAsync {path} returned null", path);
+                    return;
                 }
 
-                // Immediately poll /Status so feedbacks update without waiting for the next timer tick
+                // Immediately poll /Status without long-poll timeout so feedbacks update quickly
                 this.LogDebug("SendCommandAsync — polling /Status for immediate feedback update");
-                var status = httpClient.SendHttpGet("/Status");
+                var status = httpClient.SendHttpGet("/Status", "timeout=0", 5000);
                 if (status != null)
                     ParseStatusResponse(status);
             }));
-        }
-
-        private static int ParseInt(string value, int fallback)
-        {
-            int result;
-            return int.TryParse(value, out result) ? result : fallback;
         }
 
         private string GetServicePagedName(int slotIndex)
@@ -654,6 +672,12 @@ namespace PepperDash.Essentials.Plugin
         {
             var idx = presetPageIndex * pageSize + slotIndex;
             return idx < allPresets.Count ? allPresets[idx].Name : string.Empty;
+        }
+
+        private static int ParseInt(string value, int fallback)
+        {
+            int result;
+            return int.TryParse(value, out result) ? result : fallback;
         }
 
         private void FireStatusFeedbacks()
@@ -785,7 +809,7 @@ namespace PepperDash.Essentials.Plugin
             // SIMPL → Device: volume
             trilist.SetBoolSigAction(joinMap.VolumeUp.JoinNumber, b => { if (b) VolumeUp(); });
             trilist.SetBoolSigAction(joinMap.VolumeDown.JoinNumber, b => { if (b) VolumeDown(); });
-            trilist.SetUShortSigAction(joinMap.VolumeLevel.JoinNumber, v => SetVolume((int)(v * 100L / 65535)));
+            trilist.SetUShortSigAction(joinMap.VolumeLevel.JoinNumber, v => SetVolume((int)((v * 100L + 32767) / 65535)));
 
             // SIMPL → Device: poll lists
             trilist.SetBoolSigAction(joinMap.PollServiceList.JoinNumber, b => { if (b) receiveQueue.Enqueue(new CommandMessage(() => RefreshServices())); });
@@ -799,6 +823,7 @@ namespace PepperDash.Essentials.Plugin
             trilist.SetBoolSigAction(joinMap.PresetNextPage.JoinNumber, b => { if (b) PresetNextPage(); });
             trilist.SetBoolSigAction(joinMap.PresetPreviousPage.JoinNumber, b => { if (b) PresetPreviousPage(); });
             trilist.SetBoolSigAction(joinMap.PresetHomePage.JoinNumber, b => { if (b) PresetHomePage(); });
+            trilist.SetBoolSigAction(joinMap.PresetBack.JoinNumber, b => { if (b) PresetPreviousPage(); });
 
             // SIMPL → Device: item selection (captured loop variable avoids closure issue)
             for (var i = 0; i < pageSize; i++)
@@ -838,6 +863,17 @@ namespace PepperDash.Essentials.Plugin
             FirePresetFeedbacks();
         }
 
+        protected void DisposeBehavior()
+        {
+            if (pollTimer != null)
+            {
+                pollTimer.Stop();
+                pollTimer.Dispose();
+                pollTimer = null;
+            }
+        }
+
         #endregion
     }
 }
+
