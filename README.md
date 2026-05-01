@@ -54,7 +54,9 @@ Add a device entry to your Essentials configuration JSON. The `type` must be `bl
     "warningTimeoutMs": 60000,
     "errorTimeoutMs": 120000,
     "volumeStepPercent": 2,
-    "useCrpc": false
+    "useCrpc": false,
+    "crpcVersion": "1.0",
+    "crpcPlayerInstanceName": "BluesoundPlayer1"
   }
 }
 ```
@@ -67,7 +69,9 @@ Add a device entry to your Essentials configuration JSON. The `type` must be `bl
 | `warningTimeoutMs` | long | `60000` | Unused (reserved for future monitor) |
 | `errorTimeoutMs` | long | `120000` | Unused (reserved for future monitor) |
 | `volumeStepPercent` | int | `2` | Step size for VolumeUp/VolumeDown (1–10) |
-| `useCrpc` | bool | `false` | Activates CRPC serial bridge joins (S6 in/out) alongside the standard EISC joins |
+| `useCrpc` | bool | `false` | Activates CRPC serial bridge joins (S10 in/out) alongside the standard EISC joins |
+| `crpcVersion` | string | `"1.0"` | CRPC protocol version (`"1.0"` or `"2.0"`) |
+| `crpcPlayerInstanceName` | string | `"BluesoundPlayer1"` | CRPC Media Player instance name exposed to the router |
 
 ---
 
@@ -117,7 +121,9 @@ With `joinStart: 1` the join numbers are as listed. With `joinStart: 101` add 10
 | 3 | `Pause` | From SIMPL | Press to pause playback |
 | 3 | `IsPaused` | To SIMPL | High when state is `pause` |
 | 4 | `ShuffleState` | To/From SIMPL | FB = current shuffle state · Press = toggle shuffle |
+| 5 | `ServiceHomePageVisible` | To SIMPL | High when not at root browse level — shows Home button |
 | 5 | `NextTrack` | From SIMPL | Press to skip to next track |
+| 6 | `ServiceBackPageVisible` | To SIMPL | High when not at root browse level — shows Back button |
 | 6 | `PreviousTrack` | From SIMPL | Press to go to previous track |
 | 7 | `VolumeUp` | From SIMPL | Press to increment volume by step |
 | 8 | `VolumeDown` | From SIMPL | Press to decrement volume by step |
@@ -152,8 +158,9 @@ With `joinStart: 1` the join numbers are as listed. With `joinStart: 101` add 10
 | 3 | `CurrentArtist` | To SIMPL | Now-playing artist |
 | 4 | `CurrentAlbum` | To SIMPL | Now-playing album |
 | 5 | `AlbumArtUrl` | To SIMPL | Album art absolute URL (relative paths resolved to `http://ip:port/...`) |
-| 6 | `CrpcIn` | From SIMPL | Raw CRPC-framed string from SIMPL Media Player Router → plugin (`useCrpc: true` only) |
-| 6 | `CrpcOut` | To SIMPL | Raw CRPC-framed string from plugin → SIMPL Media Player Router (`useCrpc: true` only) |
+| 6 | `CurrentServicesMenu` | To SIMPL | Current services menu name ("Home" at root, service name when browsing) |
+| 10 | `CrpcIn` | From SIMPL | Raw CRPC-framed string from SIMPL Media Player Router → plugin (`useCrpc: true` only) |
+| 10 | `CrpcOut` | To SIMPL | Raw CRPC-framed string from plugin → SIMPL Media Player Router (`useCrpc: true` only) |
 | 21–30 | `ServiceNames` | To SIMPL | Service/input names for current page (slots 1–10) |
 | 31–40 | `PresetNames` | To SIMPL | Preset names for current page (slots 1–10) |
 
