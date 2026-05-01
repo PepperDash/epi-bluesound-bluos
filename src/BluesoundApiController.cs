@@ -416,6 +416,10 @@ namespace PepperDash.Essentials.Plugin
                 browseKeyStack.Clear();
                 browseNameStack.Clear();
                 currentServicesMenu = "Home";
+                // Clear service names before browsing so stale slots don't persist
+                allServices.Clear();
+                servicePageIndex = 0;
+                FireServiceFeedbacks();
                 BrowseServices(null);
                 FireServiceFeedbacks();
             }));
@@ -436,6 +440,10 @@ namespace PepperDash.Essentials.Plugin
                 var parentKey = browseKeyStack.Count > 0 ? browseKeyStack.Peek() : null;
                 currentServicesMenu = browseNameStack.Count > 0 ? browseNameStack.Peek() : "Home";
                 this.LogDebug("ServiceBack — navigating to key={key}", parentKey ?? "(root)");
+                // Clear service names before browsing so stale slots don't persist
+                allServices.Clear();
+                servicePageIndex = 0;
+                FireServiceFeedbacks();
                 BrowseServices(parentKey);
                 FireServiceFeedbacks();
             }));
@@ -549,6 +557,10 @@ namespace PepperDash.Essentials.Plugin
             if (!string.IsNullOrEmpty(entry.BrowseKey))
             {
                 this.LogDebug("SelectService — browsing into '{name}' key={key}", entry.Name, entry.BrowseKey);
+                // Clear service names before browsing so stale slots don't persist
+                allServices.Clear();
+                servicePageIndex = 0;
+                FireServiceFeedbacks();
                 if (BrowseServices(entry.BrowseKey))
                 {
                     browseKeyStack.Push(entry.BrowseKey);
