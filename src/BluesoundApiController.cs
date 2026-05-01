@@ -324,14 +324,16 @@ namespace PepperDash.Essentials.Plugin
             try
             {
                 var doc = XDocument.Parse(response);
-                var items = (doc.Root != null ? doc.Root.Elements("item") : doc.Descendants("item"))
+                var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var items = doc.Descendants("item")
+                    .Where(el => !el.Elements("item").Any())
                     .Select(el => new ServiceEntry
                     {
                         Name = (string)el.Attribute("text") ?? string.Empty,
                         Url = (string)el.Attribute("playURL") ?? string.Empty,
                         BrowseKey = (string)el.Attribute("browseKey") ?? string.Empty
                     })
-                    .Where(s => !string.IsNullOrEmpty(s.Name))
+                    .Where(s => !string.IsNullOrEmpty(s.Name) && seen.Add(s.Name))
                     .ToList();
 
                 this.LogDebug("BrowseServices — found {count} items", items.Count.ToString());
