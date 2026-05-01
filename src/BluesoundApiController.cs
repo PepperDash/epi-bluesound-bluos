@@ -324,7 +324,7 @@ namespace PepperDash.Essentials.Plugin
             try
             {
                 var doc = XDocument.Parse(response);
-                var items = doc.Descendants("item")
+                var items = (doc.Root != null ? doc.Root.Elements("item") : doc.Descendants("item"))
                     .Select(el => new ServiceEntry
                     {
                         Name = (string)el.Attribute("text") ?? string.Empty,
