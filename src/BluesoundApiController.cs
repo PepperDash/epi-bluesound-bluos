@@ -206,7 +206,7 @@ namespace PepperDash.Essentials.Plugin
                     : 30;
                 var httpTimeoutMs = (pollTimeoutSec + 5) * 1000;
                 this.LogDebug("PollWorker — GET /Status timeout={timeout}s, httpTimeout={httpTimeout}ms", pollTimeoutSec.ToString(), httpTimeoutMs.ToString());
-                var response = httpClient.SendHttpGet("/Status", "timeout=" + pollTimeoutSec, httpTimeoutMs);
+                var response = httpClient.SendLongPollGet("/Status", "timeout=" + pollTimeoutSec, httpTimeoutMs);
                 if (response == null)
                 {
                     this.LogDebug("PollWorker — /Status returned null, wasOnline={wasOnline}", isOnline.ToString());
@@ -299,6 +299,9 @@ namespace PepperDash.Essentials.Plugin
 
         private bool BrowseServices(string browseKey)
         {
+            // Abort any in-flight long-poll so the device connection is freed immediately
+            httpClient.AbortLongPoll();
+
             string response;
             if (string.IsNullOrEmpty(browseKey))
             {
@@ -352,6 +355,8 @@ namespace PepperDash.Essentials.Plugin
         private void RefreshPresets()
         {
             this.LogDebug("RefreshPresets — fetching /Presets");
+            // Abort any in-flight long-poll so the device connection is freed immediately
+            httpClient.AbortLongPoll();
             var response = httpClient.SendHttpGet("/Presets");
             if (response == null)
             {
