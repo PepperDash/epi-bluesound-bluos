@@ -231,44 +231,91 @@ namespace PepperDash.Essentials.Plugin
                 var root = doc.Root;
                 if (root == null) return;
 
-                var newPlayState = (string)root.Element("state") ?? string.Empty;
-                var newShuffle = (string)root.Element("shuffle") == "1";
-                var newVolume = ParseInt((string)root.Element("volume"), volumeLevel);
+                // Only update fields that are actually present in the response.
+                // Command responses (e.g. /Volume) return partial XML — missing elements
+                // must not clear the current value or feedbacks will blink.
+
+                var stateEl = root.Element("state");
+                if (stateEl != null)
+                {
+                    var newPlayState = (string)stateEl;
+                    if (newPlayState != playState)
+                    {
+                        playState = newPlayState;
+                        IsPlayingFeedback.FireUpdate();
+                        IsPausedFeedback.FireUpdate();
+                    }
+                }
+
+                var shuffleEl = root.Element("shuffle");
+                if (shuffleEl != null)
+                {
+                    var newShuffle = (string)shuffleEl == "1";
+                    if (newShuffle != shuffleState)
+                    {
+                        shuffleState = newShuffle;
+                        ShuffleFeedback.FireUpdate();
+                    }
+                }
+
+                var volumeEl = root.Element("volume");
+                if (volumeEl != null)
+                {
+                    var newVolume = ParseInt((string)volumeEl, volumeLevel);
+                    if (newVolume != volumeLevel)
+                    {
+                        volumeLevel = newVolume;
+                        VolumeLevelFeedback.FireUpdate();
+                    }
+                }
+
                 // Some services use <name> for track title; others (e.g. Radio Paradise)
                 // use <title2> for the song name and <title1> for the station/channel
-                var newTrack = (string)root.Element("name")
-                    ?? (string)root.Element("title2")
-                    ?? string.Empty;
-                var newArtist = (string)root.Element("artist")
-                    ?? (string)root.Element("title3")
-                    ?? string.Empty;
-                var newAlbum = (string)root.Element("album") ?? string.Empty;
-                var artPath = (string)root.Element("image") ?? string.Empty;
-                var newArtUrl = httpClient.ResolveUrl(artPath);
-
-                var transportChanged = newPlayState != playState;
-                var shuffleChanged = newShuffle != shuffleState;
-                var volumeChanged = newVolume != volumeLevel;
-                var trackChanged = newTrack != currentTrackName || newArtist != currentArtist
-                    || newAlbum != currentAlbum || newArtUrl != albumArtUrl;
-
-                playState = newPlayState;
-                shuffleState = newShuffle;
-                volumeLevel = newVolume;
-                currentTrackName = newTrack;
-                currentArtist = newArtist;
-                currentAlbum = newAlbum;
-                albumArtUrl = newArtUrl;
-
-                if (transportChanged)
+                var trackChanged = false;
+                var nameEl = root.Element("name") ?? root.Element("title2");
+                if (nameEl != null)
                 {
-                    IsPlayingFeedback.FireUpdate();
-                    IsPausedFeedback.FireUpdate();
+                    var newTrack = (string)nameEl ?? string.Empty;
+                    if (newTrack != currentTrackName)
+                    {
+                        currentTrackName = newTrack;
+                        trackChanged = true;
+                    }
                 }
-                if (shuffleChanged)
-                    ShuffleFeedback.FireUpdate();
-                if (volumeChanged)
-                    VolumeLevelFeedback.FireUpdate();
+
+                var artistEl = root.Element("artist") ?? root.Element("title3");
+                if (artistEl != null)
+                {
+                    var newArtist = (string)artistEl ?? string.Empty;
+                    if (newArtist != currentArtist)
+                    {
+                        currentArtist = newArtist;
+                        trackChanged = true;
+                    }
+                }
+
+                var albumEl = root.Element("album");
+                if (albumEl != null)
+                {
+                    var newAlbum = (string)albumEl ?? string.Empty;
+                    if (newAlbum != currentAlbum)
+                    {
+                        currentAlbum = newAlbum;
+                        trackChanged = true;
+                    }
+                }
+
+                var imageEl = root.Element("image");
+                if (imageEl != null)
+                {
+                    var newArtUrl = httpClient.ResolveUrl((string)imageEl ?? string.Empty);
+                    if (newArtUrl != albumArtUrl)
+                    {
+                        albumArtUrl = newArtUrl;
+                        trackChanged = true;
+                    }
+                }
+
                 if (trackChanged)
                 {
                     CurrentTrackNameFeedback.FireUpdate();
