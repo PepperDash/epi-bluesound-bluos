@@ -7,7 +7,6 @@ using System.Linq;
 using System.Xml.Linq;
 using Crestron.SimplSharp;
 using Crestron.SimplSharpPro.DeviceSupport;
-using Newtonsoft.Json.Linq;
 using PepperDash.Core;
 using PepperDash.Core.Logging;
 using PepperDash.Essentials.Core;
@@ -19,16 +18,14 @@ namespace PepperDash.Essentials.Plugin
     /// <summary>
     /// Bluesound BluOS HTTP API Essentials plugin device.
     /// Communicates with the BluOS REST API on port 11000 via BluesoundHttpClient.
-    /// Optionally bridges to Crestron Media Player via CRPC using BluesoundCrpcBridge.
     /// </summary>
-    public class BluesoundApiDevice : EssentialsBridgeableDevice, IBluesoundCrpcHandler
+    public class BluesoundApiDevice : EssentialsBridgeableDevice
     {
         private const int pageSize = 10;
 
         private readonly BluesoundApiPropertiesConfig config;
         private readonly GenericQueue receiveQueue;
         private readonly BluesoundHttpClient httpClient;
-        private BluesoundCrpcBridge crpcBridge;
         private CTimer pollTimer;
         private readonly long pollIntervalMs;
 
@@ -90,8 +87,6 @@ namespace PepperDash.Essentials.Plugin
         public BoolFeedback ServiceHomePageVisibleFeedback { get; private set; }
         /// <summary>True when not at root browse level — shows Back button visibility</summary>
         public BoolFeedback ServiceBackPageVisibleFeedback { get; private set; }
-        /// <summary>CRPC raw string output — wired to S52 when useCrpc=true</summary>
-        public StringFeedback CrpcOutFeedback { get; private set; }
 
         private sealed class ServiceEntry
         {
@@ -134,15 +129,6 @@ namespace PepperDash.Essentials.Plugin
             httpClient.SetLogger(msg => this.LogWarning(msg));
             receiveQueue = new GenericQueue(key + "-rxqueue");
 
-            // Initialize CRPC bridge if enabled
-            if (config != null && config.UseCrpc)
-            {
-                var crpcVersion = config.CrpcVersion ?? "1.0";
-                var crpcInstanceName = config.CrpcPlayerInstanceName ?? "BluesoundPlayer1";
-                crpcBridge = new BluesoundCrpcBridge(crpcVersion, crpcInstanceName, this);
-                crpcBridge.SetLogger(msg => this.LogWarning(msg));
-            }
-
             OnlineFeedback = new BoolFeedback("online", () => isOnline);
             ConnectFeedback = new BoolFeedback("connect", () => isOnline);
             StatusFeedback = new IntFeedback("status", () => isOnline ? 2 : 0);
@@ -169,8 +155,6 @@ namespace PepperDash.Essentials.Plugin
                 ServiceNameFeedbacks[i] = new StringFeedback("svcName" + slot, () => GetServicePagedName(slot));
                 PresetNameFeedbacks[i] = new StringFeedback("presetName" + slot, () => GetPresetPagedName(slot));
             }
-
-            CrpcOutFeedback = new StringFeedback("crpcOut", () => string.Empty);
 
             pollIntervalMs = config != null && config.PollTimeMs > 0 ? config.PollTimeMs : 30000L;
             pollTimer = new CTimer(o => PollWorker(), pollIntervalMs);
@@ -247,33 +231,51 @@ namespace PepperDash.Essentials.Plugin
                 var root = doc.Root;
                 if (root == null) return;
 
-                // Command responses return a minimal document (e.g. <state>stream</state>)
-                // Only parse full <status> documents for player state updates
-                if (root.Name.LocalName != "status")
-                {
-                    this.LogDebug("ParseStatusResponse — skipping non-status root element '{name}'", root.Name.LocalName);
-                    return;
-                }
-
-                playState = (string)root.Element("state") ?? string.Empty;
-                shuffleState = (string)root.Element("shuffle") == "1";
-                volumeLevel = ParseInt((string)root.Element("volume"), volumeLevel);
+                var newPlayState = (string)root.Element("state") ?? string.Empty;
+                var newShuffle = (string)root.Element("shuffle") == "1";
+                var newVolume = ParseInt((string)root.Element("volume"), volumeLevel);
                 // Some services use <name> for track title; others (e.g. Radio Paradise)
                 // use <title2> for the song name and <title1> for the station/channel
-                currentTrackName = (string)root.Element("name")
+                var newTrack = (string)root.Element("name")
                     ?? (string)root.Element("title2")
                     ?? string.Empty;
-                currentArtist = (string)root.Element("artist")
+                var newArtist = (string)root.Element("artist")
                     ?? (string)root.Element("title3")
                     ?? string.Empty;
-                currentAlbum = (string)root.Element("album") ?? string.Empty;
+                var newAlbum = (string)root.Element("album") ?? string.Empty;
                 var artPath = (string)root.Element("image") ?? string.Empty;
-                albumArtUrl = httpClient.ResolveUrl(artPath);
+                var newArtUrl = httpClient.ResolveUrl(artPath);
 
-                FireAllFeedbacks();
+                var transportChanged = newPlayState != playState;
+                var shuffleChanged = newShuffle != shuffleState;
+                var volumeChanged = newVolume != volumeLevel;
+                var trackChanged = newTrack != currentTrackName || newArtist != currentArtist
+                    || newAlbum != currentAlbum || newArtUrl != albumArtUrl;
 
-                if (crpcBridge != null && crpcBridge.HasEventSubscription("StateChanged"))
-                    EmitCrpcStateEvents();
+                playState = newPlayState;
+                shuffleState = newShuffle;
+                volumeLevel = newVolume;
+                currentTrackName = newTrack;
+                currentArtist = newArtist;
+                currentAlbum = newAlbum;
+                albumArtUrl = newArtUrl;
+
+                if (transportChanged)
+                {
+                    IsPlayingFeedback.FireUpdate();
+                    IsPausedFeedback.FireUpdate();
+                }
+                if (shuffleChanged)
+                    ShuffleFeedback.FireUpdate();
+                if (volumeChanged)
+                    VolumeLevelFeedback.FireUpdate();
+                if (trackChanged)
+                {
+                    CurrentTrackNameFeedback.FireUpdate();
+                    CurrentArtistFeedback.FireUpdate();
+                    CurrentAlbumFeedback.FireUpdate();
+                    AlbumArtUrlFeedback.FireUpdate();
+                }
             }
             catch (Exception ex)
             {
@@ -670,11 +672,6 @@ namespace PepperDash.Essentials.Plugin
                     this.LogWarning("SendCommandAsync {path} returned null", path);
                 }
 
-                // Immediately fetch fresh transport state rather than waiting for the next poll cycle
-                var statusResponse = httpClient.SendHttpGet("/Status");
-                if (statusResponse != null)
-                    ParseStatusResponse(statusResponse);
-
                 // Kick the poll timer so /Status long-poll resumes
                 if (pollTimer != null)
                     pollTimer.Reset(200);
@@ -732,39 +729,6 @@ namespace PepperDash.Essentials.Plugin
         {
             foreach (var fb in PresetNameFeedbacks) fb.FireUpdate();
             PresetPageFeedback.FireUpdate();
-        }
-
-        #endregion
-
-        #region CRPC Bridge Implementation (IBluesoundCrpcHandler)
-
-        public void OnCrpcPlay() => Play();
-        public void OnCrpcPause() => Pause();
-        public void OnCrpcNextTrack() => NextTrack();
-        public void OnCrpcPreviousTrack() => PreviousTrack();
-        public void OnCrpcToggleShuffle() => ToggleShuffle();
-
-        public string[] GetTextLines() => new[] { currentTrackName, currentArtist, currentAlbum, string.Empty };
-        public string GetAlbumArtUrl() => albumArtUrl;
-
-        public string GetPlayerState()
-        {
-            if (playState == "play" || playState == "stream") return "Playing";
-            if (playState == "pause") return "Paused";
-            return "Stopped";
-        }
-
-        private void EmitCrpcStateEvents()
-        {
-            if (crpcBridge == null) return;
-            var payload = new JObject
-            {
-                ["PlayerState"] = GetPlayerState(),
-                ["TextLines"] = new JArray(GetTextLines().Cast<object>())
-            };
-            if (!string.IsNullOrEmpty(albumArtUrl))
-                payload["AlbumArtUri"] = albumArtUrl;
-            crpcBridge.SendCrpcEvent("StateChanged", payload);
         }
 
         #endregion
@@ -851,19 +815,6 @@ namespace PepperDash.Essentials.Plugin
                 var slot = i;
                 trilist.SetBoolSigAction(joinMap.SelectServices.JoinNumber + (uint)i, b => { if (b) SelectService(slot); });
                 trilist.SetBoolSigAction(joinMap.SelectPresets.JoinNumber + (uint)i, b => { if (b) SelectPreset(slot); });
-            }
-
-            // CRPC bridge — active only when config.UseCrpc = true
-            if (crpcBridge != null)
-            {
-                crpcBridge.OnCrpcOutput = crpcOut =>
-                    trilist.SetString(joinMap.CrpcOut.JoinNumber, crpcOut);
-
-                CrpcOutFeedback = new StringFeedback("crpcOut", () => string.Empty);
-                CrpcOutFeedback.LinkInputSig(trilist.StringInput[joinMap.CrpcOut.JoinNumber]);
-
-                trilist.SetStringSigAction(joinMap.CrpcIn.JoinNumber, s =>
-                    receiveQueue.Enqueue(new CommandMessage(() => crpcBridge.ParseAndHandleCrpc(s))));
             }
 
             UpdateFeedbacks();

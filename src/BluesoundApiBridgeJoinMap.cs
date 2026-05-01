@@ -29,7 +29,7 @@ namespace PepperDash.Essentials.Plugin
 		public JoinDataComplete Pause = new JoinDataComplete(
 			new JoinData { JoinNumber = 3, JoinSpan = 1 },
 			new JoinMetadata { Description = "Pause (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
-		
+
 		[JoinName("IsPaused")]
 		public JoinDataComplete IsPaused = new JoinDataComplete(
 			new JoinData { JoinNumber = 3, JoinSpan = 1 },
@@ -39,7 +39,7 @@ namespace PepperDash.Essentials.Plugin
 		public JoinDataComplete ShuffleState = new JoinDataComplete(
 			new JoinData { JoinNumber = 4, JoinSpan = 1 },
 			new JoinMetadata { Description = "Shuffle State (FB) / Toggle Shuffle (Press)", JoinCapabilities = eJoinCapabilities.ToFromSIMPL, JoinType = eJoinType.Digital });
-		
+
 		[JoinName("ServiceHomePageVisible")]
 		public JoinDataComplete ServiceHomePageVisible = new JoinDataComplete(
 			new JoinData { JoinNumber = 5, JoinSpan = 1 },
@@ -84,7 +84,7 @@ namespace PepperDash.Essentials.Plugin
 		public JoinDataComplete ServiceHomePage = new JoinDataComplete(
 			new JoinData { JoinNumber = 11, JoinSpan = 1 },
 			new JoinMetadata { Description = "Service List — Home Page (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
-		
+
 		[JoinName("ServiceNextPage")]
 		public JoinDataComplete ServiceNextPage = new JoinDataComplete(
 			new JoinData { JoinNumber = 12, JoinSpan = 1 },
@@ -187,16 +187,6 @@ namespace PepperDash.Essentials.Plugin
 		public JoinDataComplete CurrentServicesMenu = new JoinDataComplete(
 			new JoinData { JoinNumber = 6, JoinSpan = 1 },
 			new JoinMetadata { Description = "Current Services Menu name", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
-
-		[JoinName("CrpcIn")]
-		public JoinDataComplete CrpcIn = new JoinDataComplete(
-			new JoinData { JoinNumber = 10, JoinSpan = 1 },
-			new JoinMetadata { Description = "CRPC raw string from SIMPL Media Player Router to plugin (useCrpc=true only)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Serial });
-
-		[JoinName("CrpcOut")]
-		public JoinDataComplete CrpcOut = new JoinDataComplete(
-			new JoinData { JoinNumber = 10, JoinSpan = 1 },
-			new JoinMetadata { Description = "CRPC raw string from plugin to SIMPL Media Player Router (useCrpc=true only)", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Serial });
 
 		[JoinName("ServiceNames")]
 		public JoinDataComplete ServiceNames = new JoinDataComplete(

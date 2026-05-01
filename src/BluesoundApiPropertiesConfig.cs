@@ -46,25 +46,5 @@ namespace PepperDash.Essentials.Plugin
 		/// </summary>
 		[JsonProperty("volumeStepPercent")]
 		public int VolumeStepPercent { get; set; }
-
-		/// <summary>
-		/// When true, activates the CRPC serial bridge joins (S51 in, S52 out) so that a
-		/// Crestron Media Player Router in SIMPL can exchange CRPC messages with this plugin.
-		/// The existing EISC join map remains active alongside the CRPC bridge.
-		/// </summary>
-		[JsonProperty("useCrpc")]
-		public bool UseCrpc { get; set; }
-
-		/// <summary>
-		/// CRPC protocol version: "1.0" or "2.0" (default "1.0")
-		/// </summary>
-		[JsonProperty("crpcVersion")]
-		public string CrpcVersion { get; set; }
-
-		/// <summary>
-		/// CRPC Media Player instance name exposed to the router (default "BluesoundPlayer1")
-		/// </summary>
-		[JsonProperty("crpcPlayerInstanceName")]
-		public string CrpcPlayerInstanceName { get; set; }
 	}
 }
