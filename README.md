@@ -53,10 +53,7 @@ Add a device entry to your Essentials configuration JSON. The `type` must be `bl
     "pollTimeMs": 30000,
     "warningTimeoutMs": 60000,
     "errorTimeoutMs": 120000,
-    "volumeStepPercent": 2,
-    "useCrpc": false,
-    "crpcVersion": "1.0",
-    "crpcPlayerInstanceName": "BluesoundPlayer1"
+    "volumeStepPercent": 2
   }
 }
 ```
@@ -69,9 +66,6 @@ Add a device entry to your Essentials configuration JSON. The `type` must be `bl
 | `warningTimeoutMs` | long | `60000` | Unused (reserved for future monitor) |
 | `errorTimeoutMs` | long | `120000` | Unused (reserved for future monitor) |
 | `volumeStepPercent` | int | `2` | Step size for VolumeUp/VolumeDown (1–10) |
-| `useCrpc` | bool | `false` | Activates CRPC serial bridge joins (S10 in/out) alongside the standard EISC joins |
-| `crpcVersion` | string | `"1.0"` | CRPC protocol version (`"1.0"` or `"2.0"`) |
-| `crpcPlayerInstanceName` | string | `"BluesoundPlayer1"` | CRPC Media Player instance name exposed to the router |
 
 ---
 
@@ -159,71 +153,18 @@ With `joinStart: 1` the join numbers are as listed. With `joinStart: 101` add 10
 | 4 | `CurrentAlbum` | To SIMPL | Now-playing album |
 | 5 | `AlbumArtUrl` | To SIMPL | Album art absolute URL (relative paths resolved to `http://ip:port/...`) |
 | 6 | `CurrentServicesMenu` | To SIMPL | Current services menu name ("Home" at root, service name when browsing) |
-| 10 | `CrpcIn` | From SIMPL | Raw CRPC-framed string from SIMPL Media Player Router → plugin (`useCrpc: true` only) |
-| 10 | `CrpcOut` | To SIMPL | Raw CRPC-framed string from plugin → SIMPL Media Player Router (`useCrpc: true` only) |
 | 21–30 | `ServiceNames` | To SIMPL | Service/input names for current page (slots 1–10) |
 | 31–40 | `PresetNames` | To SIMPL | Preset names for current page (slots 1–10) |
 
 ---
 
-## CRPC Field Map (Secondary Reference)
-
-This plugin's active transport and parsing logic is BluOS HTTP/XML. The CRPC map below is provided as a secondary reference for future integration work and troubleshooting only.
-
-### Framing
-
-| Layer | Field | Type | Notes |
-|---|---|---|---|
-| Transport prefix | `preamble` | 8-char hex string | Observed before JSON body in Media Player CRPC streams |
-| Payload | JSON object | JSON-RPC style | Contains `jsonrpc`, `id`, and one of `method`/`params` or `result`/`error` |
-
-### Core Message Fields
-
-| Field | Type | Direction | Description |
-|---|---|---|---|
-| `jsonrpc` | string | Request/Response | Protocol version string (typically JSON-RPC style) |
-| `id` | int | Request/Response | Correlation id linking response to request |
-| `method` | string | Request/Event | Method call name, often `Object.MethodSig` |
-| `params` | object | Request/Event | Input arguments for method/event |
-| `result` | bool/object | Response | Success payload (can be boolean or object map) |
-| `error` | object | Response | Error payload object |
-
-### Common Params Fields
-
-| Field | Type | Usage |
-|---|---|---|
-| `ev` | string | Event name for register/event calls |
-| `parameters` | object/string | Event payload details |
-| `propName` | string | Property name for get-property calls |
-| `name` | string | Registration/object naming |
-
-### Error Object Fields
-
-| Field | Type | Description |
-|---|---|---|
-| `code` | int | Error code |
-| `message` | string | Human-readable error message |
-| `data` | object | Optional structured details |
-
-### Practical Parsing Notes
-
-- Requests often parse into `MethodObject` and `MethodSig` by splitting `method` on `.`.
-- Responses may be either boolean (`result: true/false`) or object (`result: { ... }`).
-- Event types commonly encountered in CRPC tooling: `CallMethod`, `RegisterEvent`, `GetProperty`, `Event`, `Result`, `CrpcError`.
-
 ## References
 
 - BluOS Custom Integration API v1.7 — [`documents/BluOS-Custom-Integration-API_v1.7.pdf`](documents/BluOS-Custom-Integration-API_v1.7.pdf)
-- Media Player SDK v2.0 (Crestron Application Market) — https://applicationmarket.crestron.com/media-player-sdk-v2-0/
-- Media Player SDK Getting Started PDF — https://applicationmarket.crestron.com/content/Help/Crestron/MediaPlayer/SDK%20Getting%20Started.pdf
-- Crestron Core 3 Media Objects PDF — https://applicationmarket.crestron.com/content/Help/Crestron/MediaPlayer/Crestron%20Core%203%20Media%20Objects.pdf
 - PepperDash Essentials framework — https://github.com/PepperDash/Essentials
 - PepperDash plugin library — https://github.com/PepperDash
 - pyblu reference client (endpoint mapping) — https://github.com/LouisChrist/pyblu
 - Home Assistant Bluesound integration (reference architecture) — https://github.com/home-assistant/core/tree/dev/homeassistant/components/bluesound
-- CRPC Visualiser (community reverse-engineering aid) — https://github.com/OlHall/CrpcVisualiser
-- Community Crestron Media Player SDK (TypeScript) — https://github.com/KittyKatMiauwMiauw/Crestron-MediaPlayer-SDK
-- HTML5 Media Player Framework / CRPC client reference (TypeScript) — https://github.com/JayLiaProgramming/MediaPlayer
 
 ---
 
