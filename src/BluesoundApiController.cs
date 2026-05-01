@@ -223,7 +223,10 @@ namespace PepperDash.Essentials.Plugin
                 this.LogDebug("PollWorker — /Status OK, wasOffline={wasOffline}", wasOffline.ToString());
 
                 if (wasOffline)
+                {
                     FireStatusFeedbacks();
+                    receiveQueue.Enqueue(new CommandMessage(() => RefreshServices()));
+                }
 
                 ParseStatusResponse(response);
             }
