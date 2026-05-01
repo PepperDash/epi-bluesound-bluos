@@ -657,6 +657,8 @@ namespace PepperDash.Essentials.Plugin
             receiveQueue.Enqueue(new CommandMessage(() =>
             {
                 this.LogDebug("SendCommandAsync executing GET {path}?{query}", path, query ?? string.Empty);
+                // Abort the in-flight long-poll so PollWorker returns quickly
+                httpClient.AbortLongPoll();
                 var response = httpClient.SendHttpGet(path, query);
                 if (response != null)
                 {
@@ -668,7 +670,12 @@ namespace PepperDash.Essentials.Plugin
                     this.LogWarning("SendCommandAsync {path} returned null", path);
                 }
 
-                // Kick the poll timer so /Status long-poll picks up changes quickly (runs off-queue)
+                // Immediately fetch fresh transport state rather than waiting for the next poll cycle
+                var statusResponse = httpClient.SendHttpGet("/Status");
+                if (statusResponse != null)
+                    ParseStatusResponse(statusResponse);
+
+                // Kick the poll timer so /Status long-poll resumes
                 if (pollTimer != null)
                     pollTimer.Reset(200);
             }));
