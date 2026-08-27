@@ -189,3 +189,159 @@ A NuGet package is automatically generated on build. To modify package metadata,
 1. `PackageId` — NuGet package name
 2. `PackageProjectUrl` — should match this repo URL
 3. `AssemblyTitle` — DLL file name shown on processor
+<!-- START Minimum Essentials Framework Versions -->
+### Minimum Essentials Framework Versions
+
+- 2.24.0
+<!-- END Minimum Essentials Framework Versions -->
+<!-- START Config Example -->
+### Config Example
+
+```json
+{
+    "key": "GeneratedKey",
+    "uid": 1,
+    "name": "GeneratedName",
+    "type": "bluesoundapi",
+    "group": "Group",
+    "properties": {
+        "control": "SampleValue",
+        "pollTimeMs": 0,
+        "warningTimeoutMs": 0,
+        "errorTimeoutMs": 0,
+        "volumeStepPercent": 0,
+        "defaultService": "SampleString"
+    }
+}
+```
+<!-- END Config Example -->
+<!-- START Supported Types -->
+### Supported Types
+
+- bluesoundapi
+<!-- END Supported Types -->
+<!-- START Join Maps -->
+### Join Maps
+
+#### Digitals
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Is Online |
+| 2 | R | Play (Press) |
+| 2 | R | Is Playing (state = play or stream) |
+| 3 | R | Pause (Press) |
+| 3 | R | Is Paused |
+| 4 | R | Shuffle State (FB) / Toggle Shuffle (Press) |
+| 5 | R | Service Home Page Visible (FB) |
+| 6 | R | Service Back Page Visible (FB) |
+| 5 | R | Next Track (Press) |
+| 6 | R | Previous Track (Press) |
+| 7 | R | Volume Up — local zone (Press) |
+| 8 | R | Volume Down — local zone (Press) |
+| 9 | R | Poll Service List (Press) |
+| 10 | R | Poll Preset List (Press) |
+| 11 | R | Service List — Home Page (Press) |
+| 12 | R | Service List — Next Page (Press) |
+| 12 | R | Service List — Next Page Visible (FB) |
+| 13 | R | Service List — Previous Page (Press) |
+| 13 | R | Service List — Previous Page Visible (FB) |
+| 14 | R | Service List — Back (Press) |
+| 16 | R | Preset List — Home Page (Press) |
+| 17 | R | Preset List — Next Page (Press) |
+| 17 | R | Preset List — Next Page Visible (FB) |
+| 18 | R | Preset List — Previous Page (Press) |
+| 18 | R | Preset List — Previous Page Visible (FB) |
+| 19 | R | Preset List — Back (Press) |
+| 21 | R | Select Service 1-10 (Press, joins 21-30) |
+| 31 | R | Select Preset 1-10 (Press, joins 31-40) |
+
+#### Analogs
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Status (0=Offline, 2=Online) |
+| 2 | R | Volume Level 0-100 — local zone (FB/Set) |
+| 3 | R | Service List Current Page Number (1-based) |
+| 4 | R | Preset List Current Page Number (1-based) |
+
+#### Serials
+
+| Join | Type (RW) | Description |
+| --- | --- | --- |
+| 1 | R | Device Name |
+| 2 | R | Current Track Name |
+| 3 | R | Current Artist |
+| 4 | R | Current Album |
+| 21 | R | Service Names 1-10 (serials 21-30) |
+| 31 | R | Preset Names 1-10 (serials 31-40) |
+<!-- END Join Maps -->
+<!-- START Interfaces Implemented -->
+
+<!-- END Interfaces Implemented -->
+<!-- START Base Classes -->
+### Base Classes
+
+- EssentialsBridgeableDevice
+- JoinMapBaseAdvanced
+<!-- END Base Classes -->
+<!-- START Public Methods -->
+### Public Methods
+
+- public void SetLogger(Action<string> warn)
+- public string SendHttpGet(string path, string query = null, int timeoutMs = 5000)
+- public string SendLongPollGet(string path, string query = null, int timeoutMs = 35000)
+- public void AbortLongPoll()
+- public string ResolveUrl(string path)
+- public void Dispatch()
+- public void Poll()
+- public void ServiceNextPage()
+- public void ServicePreviousPage()
+- public void ServiceHomePage()
+- public void ServiceBack()
+- public void PresetNextPage()
+- public void PresetPreviousPage()
+- public void PresetHomePage()
+- public void Play()
+- public void Pause()
+- public void NextTrack()
+- public void PreviousTrack()
+- public void ToggleShuffle()
+- public void SelectService(int slotIndex)
+- public void SelectPreset(int slotIndex)
+- public void SetVolume(int level)
+- public void VolumeUp()
+- public void VolumeDown()
+<!-- END Public Methods -->
+<!-- START Bool Feedbacks -->
+### Bool Feedbacks
+
+- OnlineFeedback
+- ConnectFeedback
+- IsPlayingFeedback
+- IsPausedFeedback
+- ShuffleFeedback
+- ServiceHomePageVisibleFeedback
+- ServiceBackPageVisibleFeedback
+- ServiceNextPageVisibleFeedback
+- ServicePreviousPageVisibleFeedback
+- PresetNextPageVisibleFeedback
+- PresetPreviousPageVisibleFeedback
+<!-- END Bool Feedbacks -->
+<!-- START Int Feedbacks -->
+### Int Feedbacks
+
+- StatusFeedback
+- VolumeLevelFeedback
+- ServicePageFeedback
+- PresetPageFeedback
+<!-- END Int Feedbacks -->
+<!-- START String Feedbacks -->
+### String Feedbacks
+
+- CurrentTrackNameFeedback
+- CurrentArtistFeedback
+- CurrentAlbumFeedback
+- AlbumArtUrlFeedback
+- CurrentServicesMenuFeedback
+<!-- END String Feedbacks -->
