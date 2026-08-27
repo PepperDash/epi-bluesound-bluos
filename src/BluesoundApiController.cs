@@ -49,6 +49,8 @@ namespace PepperDash.Essentials.Plugin
 		private string preferredServiceBrowseKey;
 		private string preferredServiceName;
 		private bool serviceListEmpty;
+		// Set before every intentional long-poll abort so PollWorker doesn't mark device offline
+		private volatile bool pollAbortedForCommand;
 
 		// Presets (user-saved items)
 		private readonly List<PresetEntry> allPresets = new List<PresetEntry>();
@@ -197,14 +199,17 @@ namespace PepperDash.Essentials.Plugin
 				var response = httpClient.SendLongPollGet("/Status", "timeout=" + pollTimeoutSec, httpTimeoutMs);
 				if (response == null)
 				{
-					this.LogDebug("PollWorker — /Status returned null, wasOnline={wasOnline}", isOnline.ToString());
-					if (isOnline)
+					this.LogDebug("PollWorker — /Status returned null, wasOnline={wasOnline}, aborted={aborted}", isOnline.ToString(), pollAbortedForCommand.ToString());
+					// Intentional command-driven aborts do not indicate a connectivity loss
+					if (!pollAbortedForCommand && isOnline)
 					{
 						isOnline = false;
 						FireStatusFeedbacks();
 					}
+					pollAbortedForCommand = false;
 					return;
 				}
+				pollAbortedForCommand = false;
 
 				var wasOffline = !isOnline;
 				isOnline = true;
@@ -212,8 +217,8 @@ namespace PepperDash.Essentials.Plugin
 
 				if (wasOffline)
 				{
-					FireStatusFeedbacks();
-					receiveQueue.Enqueue(new CommandMessage(() => RefreshServices()));
+					// Fire all feedbacks so the UI is fully in sync after a genuine reconnect
+					FireAllFeedbacks();
 				}
 
 				ParseStatusResponse(response);
@@ -387,10 +392,16 @@ namespace PepperDash.Essentials.Plugin
 
 		private const int browseTimeoutMs = 15000;
 
+		private void AbortPollForCommand()
+		{
+			pollAbortedForCommand = true;
+			httpClient.AbortLongPoll();
+		}
+
 		private bool BrowseServices(string browseKey)
 		{
 			// Abort any in-flight long-poll so the device connection is freed immediately
-			httpClient.AbortLongPoll();
+			AbortPollForCommand();
 			serviceListEmpty = false;
 
 			string response;
@@ -448,7 +459,7 @@ namespace PepperDash.Essentials.Plugin
 		{
 			this.LogDebug("RefreshPresets — fetching /Presets");
 			// Abort any in-flight long-poll so the device connection is freed immediately
-			httpClient.AbortLongPoll();
+			AbortPollForCommand();
 			var response = httpClient.SendHttpGet("/Presets");
 			if (response == null)
 			{
@@ -771,7 +782,7 @@ namespace PepperDash.Essentials.Plugin
 			{
 				this.LogDebug("SendCommandAsync executing GET {path}?{query}", path, query ?? string.Empty);
 				// Abort the in-flight long-poll so PollWorker returns quickly
-				httpClient.AbortLongPoll();
+				AbortPollForCommand();
 				var response = httpClient.SendHttpGet(path, query);
 				if (response != null)
 				{
