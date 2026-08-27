@@ -219,6 +219,7 @@ namespace PepperDash.Essentials.Plugin
 				{
 					// Fire all feedbacks so the UI is fully in sync after a genuine reconnect
 					FireAllFeedbacks();
+					receiveQueue.Enqueue(new CommandMessage(() => RefreshServices()));
 				}
 
 				ParseStatusResponse(response);
