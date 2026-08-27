@@ -46,5 +46,13 @@ namespace PepperDash.Essentials.Plugin
 		/// </summary>
 		[JsonProperty("volumeStepPercent")]
 		public int VolumeStepPercent { get; set; }
+
+		/// <summary>
+		/// When set, the service browse root is pinned to this service — only its sub-items are
+		/// shown and Home/Back navigation is relative to the service, not the global /Browse root.
+		/// Value must match the service's text attribute exactly as returned by /Browse (e.g. "SoundMachine").
+		/// </summary>
+		[JsonProperty("defaultService")]
+		public string DefaultService { get; set; }
 	}
 }
