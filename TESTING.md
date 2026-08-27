@@ -16,9 +16,9 @@
 - ✅ XML parsing: extracts player state, volume, track/artist/album metadata, album art URL
 
 ### Phase 2: Services & Presets Management (Completed)
-- ✅ Service browsing: `GET /RadioBrowse?service=Capture` — returns streaming services + physical inputs
+- ✅ Service browsing: `GET /Browse` (root) or `GET /Browse?key=<browseKey>` — navigates service hierarchy
 - ✅ Preset management: `GET /Presets` — returns saved playlists
-- ✅ Pagination: 20 items/page with page index-based slicing
+- ✅ Pagination: 10 items/page with page index-based slicing
 - ✅ Paging actions: `NextPage`, `PreviousPage`, `HomePage` methods
 - ✅ Selection commands: `SelectService(slotIndex)` and `SelectPreset(slotIndex)`
 

@@ -66,6 +66,7 @@ Add a device entry to your Essentials configuration JSON. The `type` must be `bl
 | `warningTimeoutMs` | long | `60000` | Unused (reserved for future monitor) |
 | `errorTimeoutMs` | long | `120000` | Unused (reserved for future monitor) |
 | `volumeStepPercent` | int | `2` | Step size for VolumeUp/VolumeDown (1–10) |
+| `defaultService` | string | — | Pin the browse root to a preferred service name (e.g. `"SoundMachine"`). The plugin auto-navigates into this service on load and constrains Home/Back navigation to its root level. |
 
 ---
 
@@ -125,12 +126,16 @@ With `joinStart: 1` the join numbers are as listed. With `joinStart: 101` add 10
 | 10 | `PollPresetList` | From SIMPL | Press to re-poll the preset list |
 | 11 | `ServiceHomePage` | From SIMPL | Return service browse to root level |
 | 12 | `ServiceNextPage` | From SIMPL | Advance service list to next page |
+| 12 | `ServiceNextPageVisible` | To SIMPL | High when a next service page exists |
 | 13 | `ServicePreviousPage` | From SIMPL | Go to previous service list page |
+| 13 | `ServicePreviousPageVisible` | To SIMPL | High when a previous service page exists |
 | 14 | `ServiceBack` | From SIMPL | Go back one level in service browse hierarchy |
 | 16 | `PresetHomePage` | From SIMPL | Reset preset list to first page |
 | 17 | `PresetNextPage` | From SIMPL | Advance preset list to next page |
+| 17 | `PresetNextPageVisible` | To SIMPL | High when a next preset page exists |
 | 18 | `PresetPreviousPage` | From SIMPL | Go to previous preset list page |
-| 19 | `PresetBack` | From SIMPL | Reserved for future preset back navigation |
+| 18 | `PresetPreviousPageVisible` | To SIMPL | High when a previous preset page exists |
+| 19 | `PresetBack` | From SIMPL | Reset preset list to first page (alias for PresetHomePage) |
 | 21–30 | `SelectServices` | From SIMPL | Press join 21+n to select service slot n (0-based) on current page |
 | 31–40 | `SelectPresets` | From SIMPL | Press join 31+n to select preset slot n (0-based) on current page |
 

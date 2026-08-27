@@ -4,7 +4,7 @@ namespace PepperDash.Essentials.Plugin
 {
 	/// <summary>
 	/// Bridge join map for the Bluesound BluOS API plugin.
-	/// Digital joins 1-40, Analog joins 1-4, Serial joins 1-30.
+	/// Digital joins 1-40, Analog joins 1-4, Serial joins 1-40.
 	/// </summary>
 	public class BluesoundApiBridgeJoinMap : JoinMapBaseAdvanced
 	{

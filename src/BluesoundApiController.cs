@@ -362,8 +362,13 @@ namespace PepperDash.Essentials.Plugin
 			if (browseKeyStack.Count > PreferredServiceDepth)
 			{
 				var currentKey = browseKeyStack.Count > 0 ? browseKeyStack.Peek() : null;
+				// BrowseServices resets servicePageIndex to 0; restore the prior page (clamped to new max)
+				var savedPage = servicePageIndex;
 				if (BrowseServices(currentKey))
+				{
+					servicePageIndex = Math.Min(savedPage, GetServiceMaxPage());
 					FireServiceFeedbacks();
+				}
 				return;
 			}
 
@@ -975,7 +980,7 @@ namespace PepperDash.Essentials.Plugin
 			trilist.SetBoolSigAction(joinMap.PresetNextPage.JoinNumber, b => { if (b) PresetNextPage(); });
 			trilist.SetBoolSigAction(joinMap.PresetPreviousPage.JoinNumber, b => { if (b) PresetPreviousPage(); });
 			trilist.SetBoolSigAction(joinMap.PresetHomePage.JoinNumber, b => { if (b) PresetHomePage(); });
-			trilist.SetBoolSigAction(joinMap.PresetBack.JoinNumber, b => { if (b) PresetPreviousPage(); });
+			trilist.SetBoolSigAction(joinMap.PresetBack.JoinNumber, b => { if (b) PresetHomePage(); });
 
 			// SIMPL → Device: item selection (captured loop variable avoids closure issue)
 			for (var i = 0; i < pageSize; i++)
