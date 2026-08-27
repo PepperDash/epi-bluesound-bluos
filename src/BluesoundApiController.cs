@@ -691,6 +691,11 @@ namespace PepperDash.Essentials.Plugin
 			}
 			this.LogDebug("SelectService — playing '{name}' url={url}", entry.Name, url);
 
+			// Optimistic transport feedback — corrected by the next status response
+			playState = "play";
+			IsPlayingFeedback.FireUpdate();
+			IsPausedFeedback.FireUpdate();
+
 			// playURL from /Browse is a complete path (e.g. "/Play?url=Capture%3A...")
 			// Route through PlayUrl so the play action goes through a single code path
 			if (url.StartsWith("/Play?"))
