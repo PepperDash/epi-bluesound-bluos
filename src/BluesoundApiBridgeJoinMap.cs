@@ -90,10 +90,20 @@ namespace PepperDash.Essentials.Plugin
 			new JoinData { JoinNumber = 12, JoinSpan = 1 },
 			new JoinMetadata { Description = "Service List — Next Page (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+		[JoinName("ServiceNextPageVisible")]
+		public JoinDataComplete ServiceNextPageVisible = new JoinDataComplete(
+			new JoinData { JoinNumber = 12, JoinSpan = 1 },
+			new JoinMetadata { Description = "Service List — Next Page Visible (FB)", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+
 		[JoinName("ServicePreviousPage")]
 		public JoinDataComplete ServicePreviousPage = new JoinDataComplete(
 			new JoinData { JoinNumber = 13, JoinSpan = 1 },
 			new JoinMetadata { Description = "Service List — Previous Page (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+		[JoinName("ServicePreviousPageVisible")]
+		public JoinDataComplete ServicePreviousPageVisible = new JoinDataComplete(
+			new JoinData { JoinNumber = 13, JoinSpan = 1 },
+			new JoinMetadata { Description = "Service List — Previous Page Visible (FB)", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
 
 		[JoinName("ServiceBack")]
 		public JoinDataComplete ServiceBack = new JoinDataComplete(

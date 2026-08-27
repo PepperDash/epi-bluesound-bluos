@@ -93,6 +93,10 @@ namespace PepperDash.Essentials.Plugin
 		public BoolFeedback ServiceHomePageVisibleFeedback { get; private set; }
 		/// <summary>True when not at root browse level — shows Back button visibility</summary>
 		public BoolFeedback ServiceBackPageVisibleFeedback { get; private set; }
+		/// <summary>True when a next service page exists</summary>
+		public BoolFeedback ServiceNextPageVisibleFeedback { get; private set; }
+		/// <summary>True when a previous service page exists</summary>
+		public BoolFeedback ServicePreviousPageVisibleFeedback { get; private set; }
 		/// <summary>True when a next preset page exists</summary>
 		public BoolFeedback PresetNextPageVisibleFeedback { get; private set; }
 		/// <summary>True when a previous preset page exists</summary>
@@ -155,6 +159,8 @@ namespace PepperDash.Essentials.Plugin
 			CurrentServicesMenuFeedback = new StringFeedback("servicesMenu", () => currentServicesMenu);
 			ServiceHomePageVisibleFeedback = new BoolFeedback("svcHomeVis", () => browseKeyStack.Count > PreferredServiceDepth);
 			ServiceBackPageVisibleFeedback = new BoolFeedback("svcBackVis", () => browseKeyStack.Count > PreferredServiceDepth);
+			ServiceNextPageVisibleFeedback = new BoolFeedback("svcNextPageVis", () => servicePageIndex < GetServiceMaxPage());
+			ServicePreviousPageVisibleFeedback = new BoolFeedback("svcPrevPageVis", () => servicePageIndex > 0);
 			PresetNextPageVisibleFeedback = new BoolFeedback("presetNextPageVis", () => presetPageIndex < GetPresetMaxPage());
 			PresetPreviousPageVisibleFeedback = new BoolFeedback("presetPrevPageVis", () => presetPageIndex > 0);
 
@@ -868,6 +874,8 @@ namespace PepperDash.Essentials.Plugin
 			CurrentServicesMenuFeedback.FireUpdate();
 			ServiceHomePageVisibleFeedback.FireUpdate();
 			ServiceBackPageVisibleFeedback.FireUpdate();
+			ServiceNextPageVisibleFeedback.FireUpdate();
+			ServicePreviousPageVisibleFeedback.FireUpdate();
 		}
 
 		private void FirePresetFeedbacks()
@@ -910,6 +918,8 @@ namespace PepperDash.Essentials.Plugin
 			ShuffleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ShuffleState.JoinNumber]);
 			ServiceHomePageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServiceHomePageVisible.JoinNumber]);
 			ServiceBackPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServiceBackPageVisible.JoinNumber]);
+			ServiceNextPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServiceNextPageVisible.JoinNumber]);
+			ServicePreviousPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServicePreviousPageVisible.JoinNumber]);
 			PresetNextPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PresetNextPageVisible.JoinNumber]);
 			PresetPreviousPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PresetPreviousPageVisible.JoinNumber]);
 
