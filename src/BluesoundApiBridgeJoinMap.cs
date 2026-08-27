@@ -110,10 +110,20 @@ namespace PepperDash.Essentials.Plugin
 			new JoinData { JoinNumber = 17, JoinSpan = 1 },
 			new JoinMetadata { Description = "Preset List — Next Page (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
 
+		[JoinName("PresetNextPageVisible")]
+		public JoinDataComplete PresetNextPageVisible = new JoinDataComplete(
+			new JoinData { JoinNumber = 17, JoinSpan = 1 },
+			new JoinMetadata { Description = "Preset List — Next Page Visible (FB)", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
+
 		[JoinName("PresetPreviousPage")]
 		public JoinDataComplete PresetPreviousPage = new JoinDataComplete(
 			new JoinData { JoinNumber = 18, JoinSpan = 1 },
 			new JoinMetadata { Description = "Preset List — Previous Page (Press)", JoinCapabilities = eJoinCapabilities.FromSIMPL, JoinType = eJoinType.Digital });
+
+		[JoinName("PresetPreviousPageVisible")]
+		public JoinDataComplete PresetPreviousPageVisible = new JoinDataComplete(
+			new JoinData { JoinNumber = 18, JoinSpan = 1 },
+			new JoinMetadata { Description = "Preset List — Previous Page Visible (FB)", JoinCapabilities = eJoinCapabilities.ToSIMPL, JoinType = eJoinType.Digital });
 
 		[JoinName("PresetBack")]
 		public JoinDataComplete PresetBack = new JoinDataComplete(

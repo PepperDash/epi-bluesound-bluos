@@ -93,6 +93,10 @@ namespace PepperDash.Essentials.Plugin
 		public BoolFeedback ServiceHomePageVisibleFeedback { get; private set; }
 		/// <summary>True when not at root browse level — shows Back button visibility</summary>
 		public BoolFeedback ServiceBackPageVisibleFeedback { get; private set; }
+		/// <summary>True when a next preset page exists</summary>
+		public BoolFeedback PresetNextPageVisibleFeedback { get; private set; }
+		/// <summary>True when a previous preset page exists</summary>
+		public BoolFeedback PresetPreviousPageVisibleFeedback { get; private set; }
 
 		private sealed class ServiceEntry
 		{
@@ -151,6 +155,8 @@ namespace PepperDash.Essentials.Plugin
 			CurrentServicesMenuFeedback = new StringFeedback("servicesMenu", () => currentServicesMenu);
 			ServiceHomePageVisibleFeedback = new BoolFeedback("svcHomeVis", () => browseKeyStack.Count > PreferredServiceDepth);
 			ServiceBackPageVisibleFeedback = new BoolFeedback("svcBackVis", () => browseKeyStack.Count > PreferredServiceDepth);
+			PresetNextPageVisibleFeedback = new BoolFeedback("presetNextPageVis", () => presetPageIndex < GetPresetMaxPage());
+			PresetPreviousPageVisibleFeedback = new BoolFeedback("presetPrevPageVis", () => presetPageIndex > 0);
 
 			ServiceNameFeedbacks = new StringFeedback[pageSize];
 			PresetNameFeedbacks = new StringFeedback[pageSize];
@@ -868,6 +874,8 @@ namespace PepperDash.Essentials.Plugin
 		{
 			foreach (var fb in PresetNameFeedbacks) fb.FireUpdate();
 			PresetPageFeedback.FireUpdate();
+			PresetNextPageVisibleFeedback.FireUpdate();
+			PresetPreviousPageVisibleFeedback.FireUpdate();
 		}
 
 		#endregion
@@ -902,6 +910,8 @@ namespace PepperDash.Essentials.Plugin
 			ShuffleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ShuffleState.JoinNumber]);
 			ServiceHomePageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServiceHomePageVisible.JoinNumber]);
 			ServiceBackPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.ServiceBackPageVisible.JoinNumber]);
+			PresetNextPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PresetNextPageVisible.JoinNumber]);
+			PresetPreviousPageVisibleFeedback.LinkInputSig(trilist.BooleanInput[joinMap.PresetPreviousPageVisible.JoinNumber]);
 
 			// Analog feedback → SIMPL
 			StatusFeedback.LinkInputSig(trilist.UShortInput[joinMap.Status.JoinNumber]);
