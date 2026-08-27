@@ -4,20 +4,20 @@
 	</PropertyGroup>
 	<PropertyGroup>
 		<TargetFramework>net472</TargetFramework>
-		<RootNamespace>PepperDash.Essentials.Plugin</RootNamespace>
+		<RootNamespace>PepperDash.Essentials.Plugin.Bluesound.Api</RootNamespace>
 		<Deterministic>false</Deterministic>
-		<AssemblyTitle>PepperDash.Essentials.Plugin.Make.Model</AssemblyTitle>
+		<AssemblyTitle>PepperDash.Essentials.Plugin.Bluesound.Api</AssemblyTitle>
 		<Company>PepperDash Technology</Company>
-		<Description>This software is a template for a PepperDash Essentials Plugin.</Description>
-		<Copyright>Copyright 2025</Copyright>
+		<Description>This software is a PepperDash Essentials Plugin for the Bluesound API.</Description>
+		<Copyright>Copyright © 2026 PepperDash Technology</Copyright>
 		<Version>1.0.0-local</Version>
 		<GenerateAssemblyInfo>true</GenerateAssemblyInfo>
 		<InformationalVersion>$(Version)</InformationalVersion>
 		<OutputPath>bin\$(Configuration)\</OutputPath>
 		<Authors>PepperDash Technology</Authors>
-		<PackageId>Pepperdash.Essentials.Plugins.Template</PackageId>
-		<PackageProjectUrl>https://github.com/PepperDash/EssentialsPluginTemplate.git</PackageProjectUrl>
-		<PackageTags>crestron 4series essentials plugin template</PackageTags>
+		<PackageId>Pepperdash.Essentials.Plugins.Bluesound.Api</PackageId>
+		<PackageProjectUrl>https://github.com/PepperDash/epi-bluesound-api.git</PackageProjectUrl>
+		<PackageTags>crestron 4series essentials plugin bluesound api</PackageTags>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -35,16 +35,16 @@
   </ItemGroup>
 
   <ItemGroup>
- 	<PackageReference Include="PepperDashEssentials" Version="2.12.1" >
+ 	<PackageReference Include="PepperDashEssentials" Version="2.28.1">
   		<ExcludeAssets>runtime</ExcludeAssets>
  	</PackageReference>
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="../output\epi-make-model.4Series.1.0.0-local.cplz" />
+    <None Remove="../output\epi-bluesound-api.4Series.1.0.0-local.cplz" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="../output\epi-make-model.4Series.1.0.0-local.cplz" />
+    <None Remove="../output\epi-bluesound-api.4Series.1.0.0-local.cplz" />
   </ItemGroup>
 </Project>
