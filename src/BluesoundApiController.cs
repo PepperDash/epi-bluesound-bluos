@@ -400,9 +400,9 @@ namespace PepperDash.Essentials.Plugin
 			else
 			{
 				this.LogDebug("BrowseServices — fetching /Browse?key={key}", browseKey);
-				// EscapeDataString encodes all delimiters (:, /, ?, =, &) and existing % sequences.
-				// Replace("%", "%25") then double-encodes % to survive one level of Uri normalization.
-				var escapedKey = Uri.EscapeDataString(browseKey).Replace("%", "%25");
+				// EscapeDataString encodes all delimiters (:, /, ?, =, &) so the key is a
+				// single query parameter value. .NET does not normalize query strings.
+				var escapedKey = Uri.EscapeDataString(browseKey);
 				response = httpClient.SendHttpGet("/Browse", "key=" + escapedKey, browseTimeoutMs);
 			}
 
