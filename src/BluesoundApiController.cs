@@ -783,7 +783,18 @@ namespace PepperDash.Essentials.Plugin
 					this.LogWarning("SendCommandAsync {path} returned null", path);
 				}
 
-				// Kick the poll timer so /Status long-poll resumes
+				// GET /Status without timeout returns current state immediately so track
+				// metadata and transport state reflect the command result without waiting
+				// for the long-poll to detect the next change.
+				var statusResponse = httpClient.SendHttpGet("/Status", null, 5000);
+				if (statusResponse != null)
+				{
+					this.LogDebug("SendCommandAsync /Status snapshot received ({len} chars)", statusResponse.Length.ToString());
+					if (!isOnline) { isOnline = true; FireStatusFeedbacks(); }
+					ParseStatusResponse(statusResponse);
+				}
+
+				// Resume long-poll
 				if (pollTimer != null)
 					pollTimer.Reset(200);
 			}));
