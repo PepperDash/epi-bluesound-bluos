@@ -400,11 +400,9 @@ namespace PepperDash.Essentials.Plugin
 			else
 			{
 				this.LogDebug("BrowseServices — fetching /Browse?key={key}", browseKey);
-				// browseKey values contain percent-encoded segments (e.g. %2F, %3F) that must
-				// survive on the wire. .NET's Uri class decodes them during URL construction,
-				// so re-encode '%' as '%25' to compensate for one level of Uri normalization.
-				// The '&' separators in the key are intentional extra query parameters.
-				var escapedKey = browseKey.Replace("%", "%25");
+				// EscapeDataString encodes all delimiters (:, /, ?, =, &) and existing % sequences.
+				// Replace("%", "%25") then double-encodes % to survive one level of Uri normalization.
+				var escapedKey = Uri.EscapeDataString(browseKey).Replace("%", "%25");
 				response = httpClient.SendHttpGet("/Browse", "key=" + escapedKey, browseTimeoutMs);
 			}
 
