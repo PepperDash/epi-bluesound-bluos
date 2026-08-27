@@ -48,6 +48,7 @@ namespace PepperDash.Essentials.Plugin
 		// Set when config.DefaultService resolves to a valid root-level service
 		private string preferredServiceBrowseKey;
 		private string preferredServiceName;
+		private bool serviceListEmpty;
 
 		// Presets (user-saved items)
 		private readonly List<PresetEntry> allPresets = new List<PresetEntry>();
@@ -390,6 +391,7 @@ namespace PepperDash.Essentials.Plugin
 		{
 			// Abort any in-flight long-poll so the device connection is freed immediately
 			httpClient.AbortLongPoll();
+			serviceListEmpty = false;
 
 			string response;
 			if (string.IsNullOrEmpty(browseKey))
@@ -432,6 +434,7 @@ namespace PepperDash.Essentials.Plugin
 				allServices.Clear();
 				allServices.AddRange(items);
 				servicePageIndex = 0;
+				serviceListEmpty = items.Count == 0;
 				return true;
 			}
 			catch (Exception ex)
@@ -786,6 +789,8 @@ namespace PepperDash.Essentials.Plugin
 
 		private string GetServicePagedName(int slotIndex)
 		{
+			if (serviceListEmpty)
+				return slotIndex == 0 ? "No items available" : string.Empty;
 			var idx = servicePageIndex * pageSize + slotIndex;
 			return idx < allServices.Count ? allServices[idx].Name : string.Empty;
 		}
