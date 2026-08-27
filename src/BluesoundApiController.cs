@@ -358,6 +358,15 @@ namespace PepperDash.Essentials.Plugin
 
 		private void RefreshServices()
 		{
+			// If the user is mid-browse, re-fetch the current level to preserve position
+			if (browseKeyStack.Count > PreferredServiceDepth)
+			{
+				var currentKey = browseKeyStack.Count > 0 ? browseKeyStack.Peek() : null;
+				if (BrowseServices(currentKey))
+					FireServiceFeedbacks();
+				return;
+			}
+
 			var defaultService = config?.DefaultService;
 			if (!string.IsNullOrEmpty(defaultService))
 			{
